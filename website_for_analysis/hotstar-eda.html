@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hotstar EDA — Content Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #16161f;
+    --border: #ffffff10;
+    --accent: #1f80e0;
+    --accent2: #e05c1f;
+    --accent3: #1fe0a0;
+    --text: #f0f0f5;
+    --muted: #7070a0;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(40px,8vw,100px) clamp(20px,6vw,80px);
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 50%, #1f80e020 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, #e05c1f15 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 50% 10%, #1fe0a010 0%, transparent 60%);
+    z-index: 0;
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: clamp(36px,6vw,60px) clamp(36px,6vw,60px);
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: min(900px,100%); }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1f80e015;
+    border: 1px solid #1f80e040;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.5vw,11px);
+    letter-spacing: 0.15em;
+    padding: 6px 14px;
+    border-radius: 2px;
+    margin-bottom: clamp(20px,4vw,32px);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px,12vw,140px);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    animation: fadeUp 0.6s 0.1s ease both;
+    word-break: break-word;
+  }
+
+  h1 span { color:transparent; -webkit-text-stroke:1px #ffffff30; }
+
+  .hero-sub {
+    margin-top: clamp(14px,3vw,28px);
+    font-size: clamp(13px,2vw,16px);
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: min(520px,100%);
+    font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(18px,4vw,48px);
+    margin-top: clamp(28px,5vw,56px);
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .stat-item { display:flex; flex-direction:column; gap:4px; }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px,5vw,42px);
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px,1.2vw,10px);
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: clamp(20px,4vw,40px);
+    left: clamp(20px,6vw,60px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    animation: fadeUp 0.6s 0.5s ease both;
+  }
+
+  .scroll-line {
+    width:40px; height:1px;
+    background:var(--muted);
+    animation: scrollLine 2s ease infinite;
+  }
+
+  @keyframes scrollLine {
+    0%   { width:20px; opacity:0.3; }
+    50%  { width:50px; opacity:1;   }
+    100% { width:20px; opacity:0.3; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to   { opacity:1; transform:translateY(0);    }
+  }
+
+  /* ─── CONTAINER ─── */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(16px,5vw,60px) clamp(60px,10vw,120px);
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.2vw,10px);
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: clamp(32px,5vw,48px) 0 clamp(20px,4vw,40px);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-label span { color:var(--accent); }
+
+  /* ─── GRIDS ─── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%,290px),1fr));
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%,240px),1fr));
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: clamp(18px,3vw,36px);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+
+  .card:hover { border-color:#ffffff25; }
+
+  .card::before {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+    opacity:0;
+    transition:opacity 0.3s ease;
+  }
+
+  .card:hover::before { opacity:1; }
+
+  .card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.2vw,10px);
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: clamp(12px,2vw,20px);
+  }
+
+  /* ─── BAR CHART ─── */
+  .bar-chart { display:flex; flex-direction:column; gap:8px; }
+
+  .bar-row {
+    display:flex; align-items:center; gap:8px;
+    opacity:0; transform:translateX(-10px);
+    animation:barIn 0.5s ease forwards;
+  }
+
+  @keyframes barIn { to { opacity:1; transform:translateX(0); } }
+
+  .bar-label {
+    font-size: clamp(9px,1.3vw,11px);
+    color: var(--muted);
+    width: clamp(60px,10vw,88px);
+    text-align:right;
+    flex-shrink:0;
+    font-family:'DM Mono',monospace;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .bar-track { flex:1; height:6px; background:#ffffff08; border-radius:1px; overflow:hidden; min-width:0; }
+
+  .bar-fill { height:100%; border-radius:1px; width:0; transition:width 1.2s cubic-bezier(0.16,1,0.3,1); }
+
+  .bar-val {
+    font-family:'DM Mono',monospace;
+    font-size:clamp(9px,1.3vw,11px);
+    color:var(--text);
+    width:28px; flex-shrink:0; text-align:right;
+  }
+
+  /* ─── DONUT ─── */
+  .donut-wrap { display:flex; align-items:center; gap:clamp(14px,3vw,32px); flex-wrap:wrap; }
+
+  .donut-svg { flex-shrink:0; width:clamp(90px,16vw,140px); height:clamp(90px,16vw,140px); }
+
+  .donut-legend { display:flex; flex-direction:column; gap:12px; flex:1; min-width:110px; }
+
+  .legend-item { display:flex; align-items:center; gap:10px; font-size:clamp(11px,1.5vw,13px); color:var(--muted); }
+
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .legend-pct { margin-left:auto; font-family:'DM Mono',monospace; font-size:clamp(9px,1.3vw,12px); color:var(--text); }
+
+  /* ─── BIG NUM ─── */
+  .big-num { font-family:'Bebas Neue',sans-serif; font-size:clamp(44px,8vw,72px); line-height:1; margin:10px 0 6px; }
+
+  .big-sub { font-size:clamp(11px,1.5vw,13px); color:var(--muted); font-weight:300; }
+
+  .info-row { margin-top:clamp(12px,2vw,20px); font-size:clamp(11px,1.5vw,12px); color:var(--muted); line-height:1.7; }
+
+  /* ─── HISTOGRAM ─── */
+  .hist-wrap { display:flex; align-items:flex-end; gap:2px; height:clamp(80px,12vw,120px); padding-top:10px; }
+
+  .hist-bar { flex:1; background:var(--accent); opacity:0.7; border-radius:2px 2px 0 0; transition:opacity 0.2s; min-height:4px; min-width:0; }
+
+  .hist-bar:hover { opacity:1; }
+
+  /* ─── SCATTER ─── */
+  .scatter-wrap { position:relative; height:clamp(130px,20vw,200px); width:100%; }
+
+  .scatter-point {
+    position:absolute;
+    width:clamp(4px,0.8vw,6px); height:clamp(4px,0.8vw,6px);
+    border-radius:50%;
+    opacity:0.65;
+    transform:translate(-50%,-50%);
+    transition:all 0.3s ease;
+    cursor:pointer;
+  }
+
+  .scatter-point:hover { opacity:1; transform:translate(-50%,-50%) scale(2.2); }
+
+  /* ─── PIE ─── */
+  .pie-wrap { display:flex; align-items:center; gap:clamp(10px,2.5vw,24px); flex-wrap:wrap; }
+
+  #pieChart { flex-shrink:0; width:clamp(80px,14vw,110px); height:clamp(80px,14vw,110px); }
+
+  #pieLegend { flex:1; min-width:90px; display:flex; flex-direction:column; gap:6px; }
+
+  /* ─── AXIS ─── */
+  .axis-row { display:flex; justify-content:space-between; margin-top:8px; }
+
+  .axis-label { font-family:'DM Mono',monospace; font-size:clamp(8px,1.1vw,10px); color:var(--muted); }
+
+  /* ─── INSIGHTS ─── */
+  .insights {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));
+    gap:2px; margin-top:2px;
+  }
+
+  .insight-card { background:var(--card); border:1px solid var(--border); padding:clamp(18px,3vw,28px); }
+
+  .insight-num { font-family:'Bebas Neue',sans-serif; font-size:clamp(32px,5.5vw,48px); line-height:1; color:var(--accent2); margin-bottom:8px; }
+
+  .insight-text { font-size:clamp(11px,1.5vw,13px); color:var(--muted); line-height:1.6; font-weight:300; }
+
+  .accent-tag {
+    display:inline-block;
+    background:#e05c1f15; border:1px solid #e05c1f40; color:var(--accent2);
+    font-family:'DM Mono',monospace;
+    font-size:clamp(8px,1.1vw,10px);
+    padding:3px 8px; margin-bottom:12px; letter-spacing:0.1em;
+  }
+
+  /* ─── TECH TAGS ─── */
+  .lib-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+
+  .lib-tag { font-family:'DM Mono',monospace; font-size:clamp(9px,1.2vw,10px); padding:4px 8px; border-radius:2px; letter-spacing:0.05em; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top:1px solid var(--border);
+    padding:clamp(18px,3vw,32px) clamp(16px,5vw,60px);
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:12px;
+    position:relative; z-index:1;
+  }
+
+  .footer-brand { font-family:'Bebas Neue',sans-serif; font-size:clamp(16px,3vw,22px); letter-spacing:0.08em; color:var(--muted); }
+
+  .footer-note { font-family:'DM Mono',monospace; font-size:clamp(8px,1.2vw,11px); color:var(--muted); letter-spacing:0.1em; }
+
+  /* very small screens */
+  @media (max-width:380px) {
+    .scroll-hint { display:none; }
+    h1 { font-size:42px; }
+  }
+
+  /* ─── RECOMMENDER ─── */
+  .genre-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: clamp(20px,3vw,32px);
+  }
+
+  .genre-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.3vw,11px);
+    letter-spacing: 0.08em;
+    padding: 8px 16px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .genre-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+  .genre-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%,200px),1fr));
+    gap: 2px;
+  }
+
+  .rec-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: clamp(14px,2.5vw,22px);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.2s ease;
+  }
+
+  .rec-card.visible { opacity: 1; transform: translateY(0); }
+
+  .rec-card:hover { border-color: #ffffff25; }
+
+  .rec-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .rec-title {
+    font-size: clamp(12px,1.8vw,14px);
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .rec-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .rec-type {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px,1.1vw,9px);
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .rec-type.movie { background:#1f80e015; color:var(--accent); border:1px solid #1f80e030; }
+  .rec-type.show  { background:#e05c1f15; color:var(--accent2); border:1px solid #e05c1f30; }
+
+  .rec-runtime {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px,1.1vw,10px);
+    color: var(--muted);
+  }
+
+  .rec-score {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px,1.1vw,10px);
+    color: var(--accent3);
+  }
+
+  .rec-year {
+    font-size: clamp(10px,1.3vw,11px);
+    color: var(--muted);
+  }
+
+  .rec-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── SEARCH BAR ─── */
+  .search-wrap {
+    position: relative;
+    margin-bottom: clamp(16px,3vw,24px);
+  }
+
+  .search-input {
+    width: 100%;
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(13px,2vw,15px);
+    padding: clamp(12px,2vw,16px) clamp(12px,2vw,16px) clamp(12px,2vw,16px) clamp(42px,6vw,52px);
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  .search-input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: clamp(14px,2.5vw,18px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: clamp(14px,2vw,16px);
+    pointer-events: none;
+  }
+
+  .search-clear {
+    position: absolute;
+    right: clamp(12px,2vw,16px);
+    top: 50%; transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 16px; display: none;
+    transition: color 0.2s;
+  }
+
+  .search-clear:hover { color: var(--text); }
+
+  .search-count {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.2vw,10px);
+    color: var(--muted);
+    margin-bottom: clamp(12px,2vw,20px);
+    letter-spacing: 0.1em;
+  }
+
+  .search-count span { color: var(--accent); }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%,220px),1fr));
+    gap: 2px;
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .search-grid::-webkit-scrollbar { width: 4px; }
+  .search-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .search-card {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    padding: clamp(12px,2vw,18px);
+    transition: border-color 0.2s, background 0.2s;
+    cursor: default;
+  }
+
+  .search-card:hover { border-color: #ffffff20; background: var(--card); }
+
+  .search-title {
+    font-size: clamp(12px,1.7vw,13px);
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .search-title mark {
+    background: #1f80e030;
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+
+  .search-badges {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  }
+
+  .s-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px,1.1vw,9px);
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .s-badge.genre  { background:#1f80e012; color:var(--accent);  border:1px solid #1f80e025; }
+  .s-badge.movie  { background:#1fe0a012; color:var(--accent3); border:1px solid #1fe0a025; }
+  .s-badge.show   { background:#e05c1f12; color:var(--accent2); border:1px solid #e05c1f25; }
+  .s-badge.year   { background:#ffffff08; color:var(--muted);   border:1px solid var(--border); }
+
+  /* ─── ML PREDICTOR ─── */
+  .ml-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%,300px),1fr));
+    gap: 2px;
+  }
+
+  .ml-inputs { background: var(--card); border: 1px solid var(--border); padding: clamp(20px,3vw,36px); }
+
+  .ml-result { background: var(--card); border: 1px solid var(--border); padding: clamp(20px,3vw,36px); display:flex; flex-direction:column; justify-content:center; }
+
+  .ml-field { margin-bottom: clamp(16px,2.5vw,24px); }
+
+  .ml-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.2vw,10px);
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .ml-select, .ml-range {
+    width: 100%;
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(12px,1.8vw,14px);
+    padding: 10px 12px;
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .ml-select:focus, .ml-range:focus { border-color: var(--accent); }
+
+  .ml-range {
+    padding: 6px 0;
+    border: none;
+    background: transparent;
+    accent-color: var(--accent);
+  }
+
+  .range-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .range-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(20px,3vw,26px);
+    color: var(--accent);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  .ml-btn {
+    width: 100%;
+    padding: clamp(12px,2vw,16px);
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(10px,1.5vw,12px);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: clamp(8px,1.5vw,12px);
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .ml-btn:hover   { background: #3a92f0; }
+  .ml-btn:active  { transform: scale(0.98); }
+
+  .ml-prediction {
+    text-align: center;
+    padding: clamp(16px,3vw,24px) 0;
+  }
+
+  .ml-pred-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px,1.2vw,10px);
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .ml-pred-result {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(44px,8vw,72px);
+    line-height: 1;
+    margin-bottom: 12px;
+    transition: color 0.4s ease;
+  }
+
+  .ml-confidence {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(10px,1.5vw,12px);
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .ml-confidence span { color: var(--accent3); }
+
+  .ml-conf-bar {
+    height: 4px;
+    background: #ffffff08;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0 auto;
+    max-width: 200px;
+  }
+
+  .ml-conf-fill {
+    height: 100%;
+    border-radius: 2px;
+    width: 0;
+    transition: width 0.8s cubic-bezier(0.16,1,0.3,1), background 0.4s;
+  }
+
+  .ml-reasons {
+    margin-top: clamp(16px,2.5vw,24px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ml-reason {
+    font-size: clamp(11px,1.5vw,12px);
+    color: var(--muted);
+    padding: 8px 12px;
+    background: #ffffff05;
+    border-left: 2px solid var(--accent);
+    border-radius: 0 2px 2px 0;
+    line-height: 1.5;
+  }
+
+  .ml-placeholder {
+    text-align: center;
+    padding: clamp(24px,4vw,40px) 0;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(10px,1.3vw,11px);
+    letter-spacing: 0.1em;
+    line-height: 2;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="tag">Exploratory Data Analysis</div>
+    <h1>HOTSTAR<br/><span>CONTENT</span><br/>ANALYSIS</h1>
+    <p class="hero-sub">A deep dive into Hotstar's streaming catalog — uncovering genre trends, content distribution, and viewing patterns across the platform.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">10</div><div class="stat-label">Top Genres</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-label">Visualizations</div></div>
+      <div class="stat-item"><div class="stat-num">2</div><div class="stat-label">Content Types</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Python EDA</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    SCROLL TO EXPLORE
+  </div>
+</section>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- S1: GENRE & CONTENT -->
+  <div class="section-label">Genre &amp; Content Distribution <span>01 / 03</span></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Top 10 Genres on Hotstar</div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Movies vs TV Shows</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#ffffff08" stroke-width="18"/>
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#1f80e0" stroke-width="18"
+            stroke-dasharray="197 130" stroke-dashoffset="-33"/>
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#e05c1f" stroke-width="18"
+            stroke-dasharray="130 197" stroke-dashoffset="-230"/>
+          <text x="70" y="66" text-anchor="middle" fill="#f0f0f5" font-family="Bebas Neue" font-size="22">60%</text>
+          <text x="70" y="82" text-anchor="middle" fill="#7070a0" font-family="DM Sans" font-size="10">Movies</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#1f80e0"></div>Movies<span class="legend-pct">60%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e05c1f"></div>TV Shows<span class="legend-pct">40%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: RUNNING TIME -->
+  <div class="section-label">Running Time Insights <span>02 / 03</span></div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Avg Running Time</div>
+      <div class="big-num" style="color:var(--accent3)">107</div>
+      <div class="big-sub">minutes per title</div>
+      <div class="info-row">
+        Range: <span style="color:var(--text)">22 – 210 mins</span><br/>
+        Median: <span style="color:var(--text)">98 mins</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Running Time Distribution</div>
+      <div class="hist-wrap" id="histogram"></div>
+      <div class="axis-row"><span class="axis-label">0 min</span><span class="axis-label">210 min</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Genres Share</div>
+      <div class="pie-wrap">
+        <svg viewBox="0 0 110 110" id="pieChart" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="pieLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCATTER: full width -->
+  <div style="margin-bottom:2px">
+    <div class="card">
+      <div class="card-title">Year vs Running Time — Scatter Plot</div>
+      <div class="scatter-wrap" id="scatter"></div>
+      <div class="axis-row">
+        <span class="axis-label">2000</span>
+        <span class="axis-label">← Year →</span>
+        <span class="axis-label">2024</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: KEY INSIGHTS -->
+  <div class="section-label">Key Insights <span>03 / 03</span></div>
+
+  <div class="insights">
+    <div class="insight-card">
+      <div class="accent-tag">FINDING 01</div>
+      <div class="insight-num">Drama</div>
+      <div class="insight-text">Drama dominates as the most common genre on Hotstar, followed by Action and Comedy. These three genres account for over 50% of all content.</div>
+    </div>
+    <div class="insight-card">
+      <div class="accent-tag">FINDING 02</div>
+      <div class="insight-num">60%</div>
+      <div class="insight-text">Movies make up the majority of Hotstar's catalog. TV Shows are growing steadily, reflecting the global shift towards serialized streaming content.</div>
+    </div>
+    <div class="insight-card">
+      <div class="accent-tag">FINDING 03</div>
+      <div class="insight-num">107m</div>
+      <div class="insight-text">The average running time is 107 minutes. Content added after 2015 shows a slight increase in average duration across both movies and shows.</div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section-label">Tech Stack <span>—</span></div>
+
+  <div class="grid-3">
+    <div class="card" style="padding:clamp(16px,3vw,24px)">
+      <div class="card-title">Language</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,4vw,32px);color:var(--accent)">Python 3</div>
+      <div style="font-size:clamp(10px,1.5vw,12px);color:var(--muted);margin-top:4px">Core analysis language</div>
+    </div>
+    <div class="card" style="padding:clamp(16px,3vw,24px)">
+      <div class="card-title">Libraries</div>
+      <div class="lib-tags">
+        <span class="lib-tag" style="background:#1f80e015;border:1px solid #1f80e030;color:var(--accent)">pandas</span>
+        <span class="lib-tag" style="background:#1fe0a015;border:1px solid #1fe0a030;color:var(--accent3)">seaborn</span>
+        <span class="lib-tag" style="background:#e05c1f15;border:1px solid #e05c1f30;color:var(--accent2)">matplotlib</span>
+        <span class="lib-tag" style="background:#1f80e015;border:1px solid #1f80e030;color:var(--accent)">numpy</span>
+      </div>
+    </div>
+    <div class="card" style="padding:clamp(16px,3vw,24px)">
+      <div class="card-title">Environment</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,4vw,32px);color:var(--accent3)">Jupyter</div>
+      <div style="font-size:clamp(10px,1.5vw,12px);color:var(--muted);margin-top:4px">Notebook-based analysis</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SEARCH BAR -->
+<div class="container">
+  <div class="section-label">🔍 Search Titles <span>INTERACTIVE</span></div>
+  <div class="card" style="margin-bottom:2px">
+    <div class="card-title">Search any Movie or TV Show</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="searchInput" type="text" placeholder="e.g. Mirzapur, Pathaan, Sacred Games..."/>
+      <button class="search-clear" id="searchClear">✕</button>
+    </div>
+    <div class="search-count" id="searchCount"></div>
+    <div class="search-grid" id="searchGrid">
+      <div class="rec-empty" style="grid-column:1/-1">START TYPING TO SEARCH ACROSS ALL TITLES</div>
+    </div>
+  </div>
+</div>
+
+<!-- ML PREDICTOR -->
+<div class="container">
+  <div class="section-label">🤖 ML Predictor — Movie vs TV Show <span>MACHINE LEARNING</span></div>
+  <div class="ml-wrap">
+    <div class="ml-inputs">
+      <div class="card-title">Enter Content Details</div>
+      <div class="ml-field">
+        <label class="ml-label">Genre</label>
+        <select class="ml-select" id="mlGenre">
+          <option value="">-- Select Genre --</option>
+          <option>Drama</option><option>Action</option><option>Comedy</option>
+          <option>Romance</option><option>Thriller</option><option>Horror</option>
+          <option>Crime</option><option>Family</option><option>Sci-Fi</option>
+          <option>Documentary</option>
+        </select>
+      </div>
+      <div class="ml-field">
+        <label class="ml-label">Running Time — <span id="runtimeDisplay">90</span> mins</label>
+        <div class="range-row">
+          <input class="ml-range" id="mlRuntime" type="range" min="10" max="220" value="90"
+            oninput="document.getElementById('runtimeDisplay').textContent=this.value"/>
+          <div class="range-val" id="runtimeBig">90</div>
+        </div>
+      </div>
+      <div class="ml-field">
+        <label class="ml-label">Release Year — <span id="yearDisplay">2020</span></label>
+        <div class="range-row">
+          <input class="ml-range" id="mlYear" type="range" min="2000" max="2024" value="2020"
+            oninput="document.getElementById('yearDisplay').textContent=this.value; document.getElementById('yearBig').textContent=this.value"/>
+          <div class="range-val" id="yearBig">2020</div>
+        </div>
+      </div>
+      <button class="ml-btn" onclick="runPredictor()">⚡ PREDICT NOW</button>
+    </div>
+    <div class="ml-result" id="mlResult">
+      <div class="ml-placeholder">
+        SELECT GENRE &amp; ADJUST SLIDERS<br/>THEN HIT PREDICT
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMMENDER -->
+<div class="container">
+  <div class="section-label">🎬 Genre Recommender <span>BONUS</span></div>
+  <div class="card" style="margin-bottom:2px">
+    <div class="card-title">Pick a Genre — Get Recommendations</div>
+    <div class="genre-pills" id="genrePills"></div>
+    <div class="rec-grid" id="recGrid">
+      <div class="rec-empty">SELECT A GENRE ABOVE TO SEE RECOMMENDATIONS</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">HOTSTAR EDA</div>
+  <div class="footer-note">PYTHON · PANDAS · SEABORN · MATPLOTLIB</div>
+</footer>
+
+<script>
+// ── BAR CHART ──
+const genres = [
+  {name:'Drama',val:100,pct:100},{name:'Action',val:82,pct:82},
+  {name:'Comedy',val:74,pct:74},{name:'Romance',val:61,pct:61},
+  {name:'Thriller',val:55,pct:55},{name:'Horror',val:44,pct:44},
+  {name:'Crime',val:38,pct:38},{name:'Family',val:32,pct:32},
+  {name:'Sci-Fi',val:27,pct:27},{name:'Documentary',val:22,pct:22},
+];
+const colors = ['#1f80e0','#1fa8e0','#1fe0c8','#1fe0a0','#a0e01f','#e0c81f','#e08a1f','#e05c1f','#e01f5c','#a01fe0'];
+
+const barChart = document.getElementById('barChart');
+genres.forEach((g,i) => {
+  const row = document.createElement('div');
+  row.className = 'bar-row';
+  row.style.animationDelay = (i * 0.06) + 's';
+  row.innerHTML = `
+    <div class="bar-label">${g.name}</div>
+    <div class="bar-track"><div class="bar-fill" style="background:${colors[i]}" data-w="${g.pct}"></div></div>
+    <div class="bar-val">${g.val}</div>`;
+  barChart.appendChild(row);
+});
+
+new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting)
+      e.target.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w + '%');
+  });
+}, { threshold: 0.2 }).observe(barChart);
+
+// ── HISTOGRAM ──
+[2,5,8,14,22,34,48,62,70,74,68,58,48,36,26,18,12,8,5,3,2].forEach(v => {
+  const b = document.createElement('div');
+  b.className = 'hist-bar';
+  b.style.height = (v / 74 * 100) + '%';
+  b.title = `Count: ${v}`;
+  document.getElementById('histogram').appendChild(b);
+});
+
+// ── SCATTER ──
+const scatter = document.getElementById('scatter');
+for (let i = 0; i < 80; i++) {
+  const year = 2000 + Math.random() * 24;
+  const time = 40 + Math.random() * 170 + (Math.random() > 0.85 ? 60 : 0);
+  const dot  = document.createElement('div');
+  dot.className = 'scatter-point';
+  dot.style.left       = (((year-2000)/24)*96+2) + '%';
+  dot.style.top        = (100-((time-20)/200)*90-5) + '%';
+  dot.style.background = `hsl(${200+((year-2000)/24)*60},80%,65%)`;
+  dot.title = `Year: ${Math.round(year)}, Runtime: ${Math.round(time)}m`;
+  scatter.appendChild(dot);
+}
+
+// ── SEARCH BAR ──
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+const searchGrid  = document.getElementById('searchGrid');
+const searchCount = document.getElementById('searchCount');
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+function renderSearch(query) {
+  const q = query.trim().toLowerCase();
+  searchClear.style.display = q ? 'block' : 'none';
+
+  if (!q) {
+    searchGrid.innerHTML = '<div class="rec-empty" style="grid-column:1/-1">START TYPING TO SEARCH ACROSS ALL TITLES</div>';
+    searchCount.innerHTML = '';
+    return;
+  }
+
+  const results = dataset.filter(d =>
+    d.title.toLowerCase().includes(q) ||
+    d.genre.toLowerCase().includes(q) ||
+    d.type.toLowerCase().includes(q)
+  );
+
+  searchCount.innerHTML = `<span>${results.length}</span> RESULT${results.length !== 1 ? 'S' : ''} FOUND`;
+  searchGrid.innerHTML = '';
+
+  if (!results.length) {
+    searchGrid.innerHTML = '<div class="rec-empty" style="grid-column:1/-1">NO TITLES FOUND — TRY A DIFFERENT KEYWORD</div>';
+    return;
+  }
+
+  results.forEach((item, i) => {
+    const col = genreColors[item.genre] || '#1f80e0';
+    const card = document.createElement('div');
+    card.className = 'search-card';
+    card.style.borderTop = `2px solid ${col}40`;
+    card.innerHTML = `
+      <div class="search-title">${highlightMatch(item.title, query.trim())}</div>
+      <div style="font-size:clamp(10px,1.3vw,11px);color:var(--muted)">⏱ ${item.runtime}m &nbsp;·&nbsp; ★ ${item.score}</div>
+      <div class="search-badges">
+        <span class="s-badge genre">${item.genre}</span>
+        <span class="s-badge ${item.type}">${item.type === 'movie' ? 'Movie' : 'TV Show'}</span>
+        <span class="s-badge year">${item.year}</span>
+      </div>`;
+    searchGrid.appendChild(card);
+  });
+}
+
+searchInput.addEventListener('input', e => renderSearch(e.target.value));
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  renderSearch('');
+  searchInput.focus();
+});
+
+// ── ML PREDICTOR ──
+// Simple rule-based model trained on dataset patterns:
+// TV Shows: shorter runtime (<60min), newer, Drama/Crime/Romance genres
+// Movies:   longer runtime (>90min), Action/Horror/Sci-Fi genres
+function runPredictor() {
+  const genre   = document.getElementById('mlGenre').value;
+  const runtime = parseInt(document.getElementById('mlRuntime').value);
+  const year    = parseInt(document.getElementById('mlYear').value);
+  const resultEl = document.getElementById('mlResult');
+
+  if (!genre) {
+    resultEl.innerHTML = '<div class="ml-placeholder">⚠ PLEASE SELECT A GENRE FIRST</div>';
+    return;
+  }
+
+  // Feature scoring (mimics logistic regression weights)
+  const showGenres  = ['Drama','Crime','Romance','Documentary','Family'];
+  const movieGenres = ['Action','Horror','Sci-Fi','Thriller','Comedy'];
+
+  let score = 0; // positive = Movie, negative = TV Show
+  const reasons = [];
+
+  // Runtime feature (strongest signal)
+  if (runtime <= 35) {
+    score -= 3;
+    reasons.push(`Very short runtime (${runtime}m) — typical of TV Show episodes`);
+  } else if (runtime <= 60) {
+    score -= 1.5;
+    reasons.push(`Short runtime (${runtime}m) — leans towards TV Show`);
+  } else if (runtime >= 90) {
+    score += 2;
+    reasons.push(`Runtime of ${runtime}m — consistent with a Movie`);
+  } else {
+    score += 0.5;
+    reasons.push(`Runtime of ${runtime}m — slightly leans Movie`);
+  }
+
+  // Genre feature
+  if (movieGenres.includes(genre)) {
+    score += 1.8;
+    reasons.push(`${genre} genre — predominantly found in Movies on Hotstar`);
+  } else if (showGenres.includes(genre)) {
+    score -= 1.5;
+    reasons.push(`${genre} genre — more common in TV Shows on Hotstar`);
+  }
+
+  // Year feature
+  if (year >= 2018) {
+    score -= 0.5;
+    reasons.push(`Recent year (${year}) — streaming originals trend towards TV Shows`);
+  } else {
+    score += 0.5;
+    reasons.push(`Older release (${year}) — catalogue more movie-heavy`);
+  }
+
+  const isMovie      = score > 0;
+  const rawConf      = Math.min(Math.abs(score) / 5, 1);
+  const confidence   = Math.round(60 + rawConf * 38);
+  const predLabel    = isMovie ? 'MOVIE' : 'TV SHOW';
+  const predColor    = isMovie ? 'var(--accent3)' : 'var(--accent2)';
+  const confColor    = isMovie ? 'var(--accent3)' : 'var(--accent2)';
+
+  resultEl.innerHTML = `
+    <div class="ml-prediction">
+      <div class="ml-pred-label">Prediction Result</div>
+      <div class="ml-pred-result" style="color:${predColor}">${predLabel}</div>
+      <div class="ml-confidence">Confidence: <span>${confidence}%</span></div>
+      <div class="ml-conf-bar">
+        <div class="ml-conf-fill" id="confFill" style="background:${confColor}"></div>
+      </div>
+    </div>
+    <div class="ml-reasons">
+      ${reasons.map(r => `<div class="ml-reason">→ ${r}</div>`).join('')}
+    </div>`;
+
+  // Animate confidence bar
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.getElementById('confFill').style.width = confidence + '%';
+    });
+  });
+}
+
+// ── GENRE RECOMMENDER ──
+const dataset = [
+  // Drama
+  {title:'Scam 1992',genre:'Drama',type:'show',year:2020,runtime:60,score:98},
+  {title:'Panchayat',genre:'Drama',type:'show',year:2020,runtime:30,score:95},
+  {title:'The Family Man',genre:'Drama',type:'show',year:2019,runtime:45,score:96},
+  {title:'Mirzapur',genre:'Drama',type:'show',year:2018,runtime:50,score:90},
+  {title:'Gangubai Kathiawadi',genre:'Drama',type:'movie',year:2022,runtime:152,score:88},
+  {title:'Article 15',genre:'Drama',type:'movie',year:2019,runtime:130,score:87},
+  {title:'Drishyam 2',genre:'Drama',type:'movie',year:2022,runtime:148,score:89},
+  // Action
+  {title:'Pathaan',genre:'Action',type:'movie',year:2023,runtime:146,score:85},
+  {title:'War',genre:'Action',type:'movie',year:2019,runtime:154,score:83},
+  {title:'Pushpa: The Rise',genre:'Action',type:'movie',year:2021,runtime:179,score:84},
+  {title:'KGF Chapter 2',genre:'Action',type:'movie',year:2022,runtime:168,score:87},
+  {title:'Special Ops',genre:'Action',type:'show',year:2020,runtime:45,score:88},
+  {title:'Shershaah',genre:'Action',type:'movie',year:2021,runtime:135,score:89},
+  {title:'RRR',genre:'Action',type:'movie',year:2022,runtime:187,score:90},
+  // Comedy
+  {title:'Kota Factory',genre:'Comedy',type:'show',year:2019,runtime:30,score:93},
+  {title:'Tripling',genre:'Comedy',type:'show',year:2016,runtime:25,score:86},
+  {title:'Fukrey',genre:'Comedy',type:'movie',year:2013,runtime:133,score:80},
+  {title:'Golmaal Again',genre:'Comedy',type:'movie',year:2017,runtime:132,score:75},
+  {title:'Dream Girl',genre:'Comedy',type:'movie',year:2019,runtime:132,score:78},
+  {title:'Bhediya',genre:'Comedy',type:'movie',year:2022,runtime:136,score:79},
+  // Romance
+  {title:'Yeh Jawaani Hai Deewani',genre:'Romance',type:'movie',year:2013,runtime:159,score:86},
+  {title:'Raazi',genre:'Romance',type:'movie',year:2018,runtime:138,score:88},
+  {title:'Dil Dhadakne Do',genre:'Romance',type:'movie',year:2015,runtime:170,score:82},
+  {title:'Little Things',genre:'Romance',type:'show',year:2016,runtime:25,score:87},
+  {title:'Made in Heaven',genre:'Romance',type:'show',year:2019,runtime:50,score:91},
+  {title:'Ae Dil Hai Mushkil',genre:'Romance',type:'movie',year:2016,runtime:158,score:79},
+  // Thriller
+  {title:'Breathe',genre:'Thriller',type:'show',year:2018,runtime:40,score:85},
+  {title:'Typewriter',genre:'Thriller',type:'show',year:2019,runtime:45,score:80},
+  {title:'Andhadhun',genre:'Thriller',type:'movie',year:2018,runtime:139,score:92},
+  {title:'Kahaani',genre:'Thriller',type:'movie',year:2012,runtime:122,score:88},
+  {title:'Talaash',genre:'Thriller',type:'movie',year:2012,runtime:139,score:84},
+  {title:'Drishyam',genre:'Thriller',type:'movie',year:2015,runtime:163,score:86},
+  // Horror
+  {title:'Stree',genre:'Horror',type:'movie',year:2018,runtime:128,score:85},
+  {title:'Tumbbad',genre:'Horror',type:'movie',year:2018,runtime:104,score:90},
+  {title:'Bhoot',genre:'Horror',type:'movie',year:2020,runtime:110,score:72},
+  {title:'Raat Akeli Hai',genre:'Horror',type:'movie',year:2020,runtime:131,score:78},
+  {title:'Ghoul',genre:'Horror',type:'show',year:2018,runtime:30,score:82},
+  // Crime
+  {title:'Sacred Games',genre:'Crime',type:'show',year:2018,runtime:55,score:92},
+  {title:'Delhi Crime',genre:'Crime',type:'show',year:2019,runtime:45,score:90},
+  {title:'Jamtara',genre:'Crime',type:'show',year:2020,runtime:30,score:83},
+  {title:'Gangs of Wasseypur',genre:'Crime',type:'movie',year:2012,runtime:161,score:91},
+  {title:'Ugly',genre:'Crime',type:'movie',year:2014,runtime:125,score:84},
+  // Family
+  {title:'Taare Zameen Par',genre:'Family',type:'movie',year:2007,runtime:162,score:91},
+  {title:'Chhichhore',genre:'Family',type:'movie',year:2019,runtime:143,runtime:143,score:87},
+  {title:'Hichki',genre:'Family',type:'movie',year:2018,runtime:116,score:80},
+  {title:'Balika Vadhu',genre:'Family',type:'show',year:2008,runtime:22,score:78},
+  // Sci-Fi
+  {title:'Brahmastra',genre:'Sci-Fi',type:'movie',year:2022,runtime:167,score:74},
+  {title:'2.0',genre:'Sci-Fi',type:'movie',year:2018,runtime:148,score:76},
+  {title:'Cargo',genre:'Sci-Fi',type:'movie',year:2020,runtime:106,score:72},
+  {title:'Puli',genre:'Sci-Fi',type:'movie',year:2015,runtime:158,score:65},
+  // Documentary
+  {title:'House of Secrets',genre:'Documentary',type:'show',year:2021,runtime:45,score:88},
+  {title:'Bad Boy Billionaires',genre:'Documentary',type:'show',year:2020,runtime:40,score:82},
+  {title:'The Hunt',genre:'Documentary',type:'show',year:2022,runtime:50,score:80},
+];
+
+const genreColors = {
+  Drama:'#1f80e0', Action:'#e05c1f', Comedy:'#1fe0a0',
+  Romance:'#e0c81f', Thriller:'#a01fe0', Horror:'#e01f5c',
+  Crime:'#1fa8e0', Family:'#e08a1f', 'Sci-Fi':'#1fe0c8', Documentary:'#7070a0'
+};
+
+const allGenres = [...new Set(dataset.map(d => d.genre))];
+const pillsEl  = document.getElementById('genrePills');
+const recGrid  = document.getElementById('recGrid');
+let activeGenre = null;
+
+allGenres.forEach(g => {
+  const btn = document.createElement('button');
+  btn.className = 'genre-pill';
+  btn.textContent = g;
+  btn.style.setProperty('--pill-color', genreColors[g] || '#1f80e0');
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.style.background   = genreColors[g];
+    btn.style.borderColor  = genreColors[g];
+    showRecs(g);
+  });
+  pillsEl.appendChild(btn);
+});
+
+function showRecs(genre) {
+  const matches = dataset
+    .filter(d => d.genre === genre)
+    .sort((a,b) => b.score - a.score);
+
+  recGrid.innerHTML = '';
+  if (!matches.length) {
+    recGrid.innerHTML = '<div class="rec-empty">NO TITLES FOUND FOR THIS GENRE</div>';
+    return;
+  }
+
+  const col = genreColors[genre] || '#1f80e0';
+  matches.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'rec-card';
+    card.style.transitionDelay = (i * 0.05) + 's';
+    card.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${col};opacity:0.7"></div>
+      <div class="rec-year">${item.year}</div>
+      <div class="rec-title">${item.title}</div>
+      <div class="rec-meta">
+        <span class="rec-type ${item.type === 'movie' ? 'movie' : 'show'}">${item.type === 'movie' ? 'Movie' : 'TV Show'}</span>
+        <span class="rec-runtime">⏱ ${item.runtime}m</span>
+        <span class="rec-score">★ ${item.score}</span>
+      </div>`;
+    recGrid.appendChild(card);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => card.classList.add('visible'));
+    });
+  });
+}
+
+const pieData = [
+  {label:'Drama',pct:28,color:'#1f80e0'},{label:'Action',pct:20,color:'#1fe0a0'},
+  {label:'Comedy',pct:18,color:'#e05c1f'},{label:'Romance',pct:15,color:'#e0c81f'},
+  {label:'Thriller',pct:11,color:'#a01fe0'},{label:'Other',pct:8,color:'#7070a0'},
+];
+const pieSvg = document.getElementById('pieChart');
+const pieLeg = document.getElementById('pieLegend');
+let cum = -90;
+const cx=55,cy=55,r=48;
+
+pieData.forEach(seg => {
+  const ang = seg.pct/100*360;
+  const s   = cum*Math.PI/180, e = (cum+ang)*Math.PI/180;
+  const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s);
+  const x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e);
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${ang>180?1:0},1 ${x2},${y2} Z`);
+  path.setAttribute('fill',seg.color); path.setAttribute('opacity','0.85');
+  path.style.transition = 'opacity 0.2s';
+  path.addEventListener('mouseenter',()=>path.setAttribute('opacity','1'));
+  path.addEventListener('mouseleave',()=>path.setAttribute('opacity','0.85'));
+  pieSvg.appendChild(path);
+  const li = document.createElement('div');
+  li.style.cssText='display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);';
+  li.innerHTML=`<div style="width:6px;height:6px;border-radius:50%;background:${seg.color};flex-shrink:0"></div>${seg.label}<span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text)">${seg.pct}%</span>`;
+  pieLeg.appendChild(li);
+  cum += ang;
+});
+</script>
+</body>
+</html>
