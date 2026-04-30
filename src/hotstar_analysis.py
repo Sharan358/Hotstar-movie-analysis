@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ttest_1samp
 from sklearn.linear_model import LinearRegression
-
+print()
 
 df = pd.read_csv("C:\\Users\\Sharan\\OneDrive\\Desktop\\int 375\\data\\hotstar.csv")
 
